@@ -1,7 +1,13 @@
+import useSpeechToText from "@/hooks/useSpeechToText";
 import { Input, Spinner, Tooltip } from "@nextui-org/react";
-import { Airplane, ArrowRight, PaperPlaneRight } from "@phosphor-icons/react";
+import {
+  Airplane,
+  ArrowRight,
+  Microphone,
+  PaperPlaneRight,
+} from "@phosphor-icons/react";
 import clsx from "clsx";
-import MicrophoneAccess from "./Microphone";
+import { useState } from "react";
 
 interface StreamingAvatarTextInputProps {
   label: string;
@@ -31,6 +37,26 @@ export default function InteractiveAvatarTextInput({
     onSubmit();
     setInput("");
   }
+  const [textInput, setTextInput] = useState<string>("");
+  const { isListening, transcript, startListening, stopListening } =
+    useSpeechToText({ continuous: true });
+
+  const stopVoiceInput = () => {
+    setTextInput(
+      (prevVal) =>
+        prevVal +
+        (transcript.length ? (prevVal.length ? " " : "") + transcript : "")
+    );
+    stopListening();
+  };
+
+  const startStopListening = () => {
+    isListening ? stopVoiceInput() : startListening();
+
+    setInput(textInput);
+    onSubmit();
+    // setInput("");
+  };
 
   return (
     <>
@@ -38,6 +64,29 @@ export default function InteractiveAvatarTextInput({
         endContent={
           <div className="flex flex-row items-center h-full">
             {endContent}
+            <Tooltip content="Voice input">
+              {loading ? (
+                <Spinner
+                  className="text-indigo-300 hover:text-indigo-200"
+                  size="sm"
+                  color="default"
+                />
+              ) : (
+                <button
+                  type="submit"
+                  className="focus:outline-none"
+                  onClick={() => startStopListening()}
+                >
+                  <Microphone
+                    className={clsx(
+                      "text-indigo-300 hover:text-indigo-200",
+                      disabled && "opacity-50"
+                    )}
+                    size={24}
+                  />
+                </button>
+              )}
+            </Tooltip>
             <Tooltip content="Send message">
               {loading ? (
                 <Spinner
@@ -75,7 +124,6 @@ export default function InteractiveAvatarTextInput({
         onValueChange={setInput}
         isDisabled={disabled}
       />
-      <MicrophoneAccess />
     </>
   );
 }
